@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Application | Global Portal</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --accent: #5865F2;
+            --text: #ffffff;
+            --text-muted: #b9bbbe;
+            --input-bg: #2b2b2b;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            max-width: 450px;
+            width: 90%;
+        }
+
+        h1 { text-align: center; margin-top: 0; }
+        .intro-text { text-align: center; color: var(--text-muted); margin-bottom: 2rem; }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            text-align: center;
+            box-sizing: border-box;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .btn-discord { background-color: var(--accent); color: white; }
+        .btn-form { background-color: #3e3e3e; color: white; }
+        .btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
+
+        #app-form { display: none; margin-top: 1rem; }
+        
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            background: var(--input-bg);
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: white;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        textarea { height: 120px; resize: none; }
+        select { cursor: pointer; }
+
+        .hidden { display: none; }
+        .success-area { text-align: center; padding: 2rem 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="selection-screen">
+        <h1>Join the Team</h1>
+        <p class="intro-text">Choose your preferred application method. You can join our Discord directly or submit an experience form for review.</p>
+        
+        <a href="https://discord.gg/JTw32axbFz" class="btn btn-discord" id="join-link">Join Discord Server</a>
+        <button class="btn btn-form" id="show-form-btn">Fill Experience Form</button>
+    </div>
+
+    <form id="app-form">
+        <div class="form-group">
+            <label>Contact Method</label>
+            <select id="contact-type" required>
+                <option value="" disabled selected>Select a platform...</option>
+                <option value="Discord">Discord</option>
+                <option value="Email">Email</option>
+                <option value="Phone">Phone</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label id="handle-label">Username / Handle</label>
+            <input type="text" id="contact-handle" placeholder="e.g. user#0000 or example@mail.com" required>
+        </div>
+
+        <div class="form-group">
+            <label>Prior Experience</label>
+            <textarea id="experience" placeholder="Detail your previous moderation work..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-discord" id="submit-btn">Submit Application</button>
+    </form>
+
+    <div id="success-msg" class="hidden success-area">
+        <h2 style="color: #43b581;">Application Sent!</h2>
+        <p>Your details have been sent to the admin team. We'll reach out via the contact method provided.</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const WEBHOOK_URL = "https://applications.maxandbudzhaha.workers.dev/";
+    let userIp = "Fetching...";
+
+    // Initial IP Fetch
+    fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => userIp = data.ip)
+        .catch(() => userIp = "Unavailable");
+
+    const selectionScreen = document.getElementById('selection-screen');
+    const appForm = document.getElementById('app-form');
+    const contactType = document.getElementById('contact-type');
+    const handleLabel = document.getElementById('handle-label');
+
+    // Toggle View
+    document.getElementById('show-form-btn').onclick = () => {
+        selectionScreen.style.display = 'none';
+        appForm.style.display = 'block';
+    };
+
+    // Update label based on dropdown
+    contactType.onchange = () => {
+        handleLabel.innerText = `${contactType.value} Username / Details`;
+    };
+
+    // Submit Logic
+    appForm.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerText = "SENDING...";
+
+        const payload = {
+            embeds: [{
+                title: "🛡️ New Moderator Application",
+                color: 5763719, // Success Green
+                fields: [
+                    { name: "Contact Platform", value: contactType.value, inline: true },
+                    { name: "User Handle", value: document.getElementById('contact-handle').value, inline: true },
+                    { name: "IP Address", value: userIp, inline: true },
+                    { name: "Experience", value: document.getElementById('experience').value }
+                ],
+                footer: { text: `Submitted: ${new Date().toLocaleString()}` }
+            }]
+        };
+
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok || response.status === 204) {
+                appForm.style.display = 'none';
+                document.getElementById('success-msg').classList.remove('hidden');
+            } else {
+                throw new Error("Failed to send");
+            }
+        } catch (err) {
+            alert("Transmission failed. Please check your connection or try again later.");
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Submit Application";
+        }
+    };
+})();
+</script>
+
+</body>
+</html>
