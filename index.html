@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Application | Global Portal</title>
+    <title>Google Classroom</title>
     <style>
         :root {
             --bg: #0f0f0f;
@@ -12,6 +12,8 @@
             --text: #ffffff;
             --text-muted: #b9bbbe;
             --input-bg: #2b2b2b;
+            --reward-gold: #ffcc00;
+            --party-gradient: linear-gradient(45deg, #ff00ff, #00ffff);
         }
 
         body {
@@ -30,12 +32,25 @@
             padding: 2.5rem;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            max-width: 450px;
+            max-width: 480px;
             width: 90%;
         }
 
         h1 { text-align: center; margin-top: 0; }
-        .intro-text { text-align: center; color: var(--text-muted); margin-bottom: 2rem; }
+        .intro-text { text-align: center; color: var(--text-muted); margin-bottom: 1.5rem; }
+
+        .reward-box {
+            background: rgba(88, 101, 242, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .reward-box strong { color: var(--reward-gold); }
+        .highlight { color: #5865F2; font-weight: bold; }
 
         .btn {
             display: block;
@@ -87,8 +102,15 @@
         <h1>Join the Team</h1>
         <p class="intro-text">Choose your preferred application method. You can join our Discord directly or submit an experience form for review.</p>
         
+        <div class="reward-box">
+            We’re rewarding moderators who help spread the word! Share the site today to earn <strong>Special Global Abilities</strong> and take your moderation to the next level.<br><br>
+            Top contributors gain the power to trigger <span class="highlight">Global Changes</span> across the entire site—including <span class="highlight">Party Mode</span> and broadcasting <span class="highlight">Global Messages</span> to all active users.<br><br>
+            By helping our community grow, you’ll also earn a bigger say in feedback, giving you a direct seat at the table for future site updates.<br><br>
+            <strong>Ready to lead?</strong>
+        </div>
+        
         <a href="https://discord.gg/JTw32axbFz" class="btn btn-discord" id="join-link">Join Discord Server</a>
-        <button class="btn btn-form" id="show-form-btn">Fill Experience Form</button>
+        <button class="btn btn-form" id="show-form-btn">Fill Application Form</button>
     </div>
 
     <form id="app-form">
@@ -103,13 +125,13 @@
         </div>
 
         <div class="form-group">
-            <label id="handle-label">Username / Handle</label>
+            <label id="handle-label">Username / Number</label>
             <input type="text" id="contact-handle" placeholder="e.g. user#0000 or example@mail.com" required>
         </div>
 
         <div class="form-group">
-            <label>Prior Experience</label>
-            <textarea id="experience" placeholder="Detail your previous moderation work..." required></textarea>
+            <label>Why should we hire you / Prior Experience</label>
+            <textarea id="experience" placeholder="Detail your previous moderation work or reason for hire..." required></textarea>
         </div>
 
         <button type="submit" class="btn btn-discord" id="submit-btn">Submit Application</button>
@@ -155,30 +177,28 @@
         const payload = {
             embeds: [{
                 title: "🛡️ New Moderator Application",
+                description: "A user is requesting staff access to use Global Abilities.",
                 color: 5763719,
                 fields: [
                     { name: "Contact Platform", value: contactType.value, inline: true },
                     { name: "User Handle", value: document.getElementById('contact-handle').value, inline: true },
                     { name: "IP Address", value: userIp, inline: true },
-                    { name: "Experience", value: document.getElementById('experience').value }
+                    { name: "Experience / Reason", value: document.getElementById('experience').value }
                 ],
                 footer: { text: `Submitted: ${new Date().toLocaleString()}` }
             }]
         };
 
         try {
-            // Using no-cors mode to bypass preflight checks
             await fetch(WEBHOOK_URL, {
                 method: 'POST',
-                mode: 'no-cors', // This is the change
+                mode: 'no-cors',
                 headers: { 
                     'Content-Type': 'application/json' 
                 },
                 body: JSON.stringify(payload)
             });
 
-            // Since we use no-cors, we can't read the response. 
-            // We wait 1 second and show the success message regardless.
             setTimeout(() => {
                 appForm.style.display = 'none';
                 document.getElementById('success-msg').classList.remove('hidden');
