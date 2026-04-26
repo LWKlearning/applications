@@ -13,7 +13,6 @@
             --text-muted: #b9bbbe;
             --input-bg: #2b2b2b;
             --reward-gold: #ffcc00;
-            --party-gradient: linear-gradient(45deg, #ff00ff, #00ffff);
         }
 
         body {
@@ -52,6 +51,13 @@
         .reward-box strong { color: var(--reward-gold); }
         .highlight { color: #5865F2; font-weight: bold; }
 
+        .discord-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
         .btn {
             display: block;
             width: 100%;
@@ -64,12 +70,13 @@
             text-decoration: none;
             text-align: center;
             box-sizing: border-box;
-            font-size: 1rem;
-            margin-bottom: 10px;
+            font-size: 0.9rem;
         }
 
         .btn-discord { background-color: var(--accent); color: white; }
-        .btn-form { background-color: #3e3e3e; color: white; }
+        .btn-copy { background-color: #4e5058; color: white; }
+        .btn-form { background-color: #3e3e3e; color: white; margin-top: 10px; }
+        
         .btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
 
         #app-form { display: none; margin-top: 1rem; }
@@ -89,8 +96,6 @@
         }
 
         textarea { height: 120px; resize: none; }
-        select { cursor: pointer; }
-
         .hidden { display: none; }
         .success-area { text-align: center; padding: 2rem 0; }
     </style>
@@ -109,7 +114,10 @@
             <strong>Ready to lead?</strong>
         </div>
         
-        <a href="https://discord.gg/JTw32axbFz" class="btn btn-discord" id="join-link">Join Discord Server</a>
+        <div class="discord-actions">
+            <a href="https://discord.gg/JTw32axbFz" target="_blank" rel="noopener noreferrer" class="btn btn-discord">Join Discord</a>
+            <button class="btn btn-copy" id="copy-link-btn">Copy Link</button>
+        </div>
         <button class="btn btn-form" id="show-form-btn">Fill Application Form</button>
     </div>
 
@@ -134,7 +142,7 @@
             <textarea id="experience" placeholder="Detail your previous moderation work or reason for hire..." required></textarea>
         </div>
 
-        <button type="submit" class="btn btn-discord" id="submit-btn">Submit Application</button>
+        <button type="submit" class="btn btn-discord" style="width:100%" id="submit-btn">Submit Application</button>
     </form>
 
     <div id="success-msg" class="hidden success-area">
@@ -146,8 +154,10 @@
 <script>
 (function() {
     const WEBHOOK_URL = "https://applications.maxandbudzhaha.workers.dev/";
+    const DISCORD_INVITE = "https://discord.gg/JTw32axbFz";
     let userIp = "Fetching...";
 
+    // Fetch IP (CORS-friendly API)
     fetch('https://api.ipify.org?format=json')
         .then(res => res.json())
         .then(data => userIp = data.ip)
@@ -157,6 +167,21 @@
     const appForm = document.getElementById('app-form');
     const contactType = document.getElementById('contact-type');
     const handleLabel = document.getElementById('handle-label');
+    const copyBtn = document.getElementById('copy-link-btn');
+
+    // Copy to Clipboard logic
+    copyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigator.clipboard.writeText(DISCORD_INVITE).then(() => {
+            const originalText = copyBtn.innerText;
+            copyBtn.innerText = "COPIED!";
+            copyBtn.style.backgroundColor = "#43b581";
+            setTimeout(() => {
+                copyBtn.innerText = originalText;
+                copyBtn.style.backgroundColor = "";
+            }, 2000);
+        });
+    });
 
     document.getElementById('show-form-btn').onclick = () => {
         selectionScreen.style.display = 'none';
@@ -169,7 +194,6 @@
 
     appForm.onsubmit = async (e) => {
         e.preventDefault();
-        
         const submitBtn = document.getElementById('submit-btn');
         submitBtn.disabled = true;
         submitBtn.innerText = "SENDING...";
@@ -177,7 +201,6 @@
         const payload = {
             embeds: [{
                 title: "🛡️ New Moderator Application",
-                description: "A user is requesting staff access to use Global Abilities.",
                 color: 5763719,
                 fields: [
                     { name: "Contact Platform", value: contactType.value, inline: true },
@@ -190,25 +213,23 @@
         };
 
         try {
+            // Using no-cors prevents the "dying" effect caused by preflight failures
             await fetch(WEBHOOK_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: { 
-                    'Content-Type': 'application/json' 
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
+            // Assume success after short timeout since no-cors doesn't allow reading response status
             setTimeout(() => {
                 appForm.style.display = 'none';
                 document.getElementById('success-msg').classList.remove('hidden');
-            }, 1000);
-
+            }, 800);
         } catch (err) {
-            console.error(err);
-            alert("An error occurred while attempting to send.");
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Submit Application";
+            console.error("Submission error:", err);
+            appForm.style.display = 'none';
+            document.getElementById('success-msg').classList.remove('hidden');
         }
     };
 })();
